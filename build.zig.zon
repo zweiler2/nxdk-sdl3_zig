@@ -1,0 +1,28 @@
+.{
+    .name = .nxdk_sdl3_zig,
+    .version = "0.0.1",
+    .fingerprint = 0xd4b6d669a20d7f92, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .nxdk_zig = .{
+            .url = "git+https://github.com/zweiler2/nxdk_zig.git#1c4f29aa84680302d4a2d2b3f08f35cd5d3171c8",
+            .hash = "nxdk_zig-0.0.1-BbFuWZgFCQAUmqkCHJ8T0uXAC7urdgzlm98tGDZYmxWJ",
+        },
+        .nxdk_sdl3 = .{
+            .url = "git+https://github.com/Ryzee119/nxdk-sdl3.git#a4069f2ff8a32620eb92c3f2b70fd28bea210b6b",
+            .hash = "N-V-__8AAP75DwDPhwYr92Q7BK4Bpi9DKgjNC-lE5LkHaP7G",
+        },
+        .sdl3 = .{
+            .url = "git+https://github.com/libsdl-org/SDL.git#8e37db5e797b6167f3a00d697d816a684bd259c7",
+            .hash = "N-V-__8AAK0L9gIjDFy-Eg2Hz-QzOhBz5xW0d8OBKAiAhSM6",
+        },
+        .xgu = .{
+            .url = "git+https://github.com/Ryzee119/xgu.git#9cac8b0d791dab7815570a30b8bb34dc90621a55",
+            .hash = "N-V-__8AADpNAgDfXcGsxVmxlfC0PwGMR0kQHD_Q5ADktP0J",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+}
