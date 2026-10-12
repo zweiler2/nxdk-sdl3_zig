@@ -2,11 +2,11 @@
     .name = .nxdk_sdl3_zig,
     .version = "0.0.1",
     .fingerprint = 0xd4b6d669a20d7f92, // Changing this has security and trust implications.
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .nxdk_zig = .{
-            .url = "git+https://github.com/zweiler2/nxdk_zig.git#1c4f29aa84680302d4a2d2b3f08f35cd5d3171c8",
-            .hash = "nxdk_zig-0.0.1-BbFuWZgFCQAUmqkCHJ8T0uXAC7urdgzlm98tGDZYmxWJ",
+            .url = "git+https://github.com/zweiler2/nxdk_zig.git#fbde653cb18891f72f16698cc2722c0b835cdf56",
+            .hash = "nxdk_zig-0.0.1-BbFuWRYKCQD28vLfLfS6Vl1EdFyfwvp-yQuo71Inexvc",
         },
         .nxdk_sdl3 = .{
             .url = "git+https://github.com/Ryzee119/nxdk-sdl3.git#a4069f2ff8a32620eb92c3f2b70fd28bea210b6b",
@@ -19,6 +19,10 @@
         .xgu = .{
             .url = "git+https://github.com/Ryzee119/xgu.git#9cac8b0d791dab7815570a30b8bb34dc90621a55",
             .hash = "N-V-__8AADpNAgDfXcGsxVmxlfC0PwGMR0kQHD_Q5ADktP0J",
+        },
+        .translate_c = .{
+            .url = "git+https://codeberg.org/ziglang/translate-c.git#38d8339d9050eafe5dcf85b4fc9368576ca967e1",
+            .hash = "translate_c-0.0.0-Q_BUWoROBwAyokT5SJSw4YIrwdLd1w53i-pEYwBDqXZt",
         },
     },
     .paths = .{

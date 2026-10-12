@@ -1,13 +1,41 @@
 const std = @import("std");
 const nxdk_zig = @import("nxdk_zig");
 
+const Translator = @import("translate_c").Translator;
+
+pub const c_flags: []const []const u8 = &.{
+    // "-ffreestanding",
+    "-nostdlib",
+    // "-fno-builtin",
+    "-Wno-builtin-macro-redefined",
+    "-DNXDK",
+    "-D__STDC__=1",
+    "-U__STDC_NO_THREADS__",
+};
+
+const c_source =
+    \\// pdclib builds INT64_C/UINT64_C from bare token-paste suffixes (e.g.
+    \\// `#define _PDCLIB_UINT64_LITERAL ull`), which translate-c cannot translate.
+    \\// Restate them via aro's builtin __INT64_C/__UINT64_C, which it can.
+    \\#include <stdint.h>
+    \\#undef INT64_C
+    \\#undef UINT64_C
+    \\#define INT64_C(c) __INT64_C(c)
+    \\#define UINT64_C(c) __UINT64_C(c)
+    \\#include <SDL3/SDL.h>
+    \\
+;
+
 pub fn build(b: *std.Build) !void {
     const target = b.resolveTargetQuery(nxdk_zig.target_query);
     const optimize = b.standardOptimizeOption(.{});
 
-    const mod = b.addModule("nxdk_sdl3_zig", .{
+    const translate_c: Translator = .init(b.dependency("translate_c", .{}), .{
+        .c_source_file = b.addWriteFiles().add("c.c", c_source),
         .target = target,
         .optimize = optimize,
+        .link_libc = false,
+        .extra_args = c_flags,
     });
 
     const lib = b.addLibrary(.{
@@ -15,19 +43,22 @@ pub fn build(b: *std.Build) !void {
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
+            .sanitize_c = .off,
         }),
     });
     b.installArtifact(lib);
-    mod.linkLibrary(lib);
+    translate_c.linkLibrary(lib);
 
     for (c_macros) |macro| {
         lib.root_module.addCMacro(macro, "1");
+        translate_c.defineCMacro(macro, "1");
     }
 
     const nxdk_zig_dep = b.dependency("nxdk_zig", .{
         .optimize = optimize,
     });
     nxdk_zig.addCIncludePaths(lib.root_module, nxdk_zig_dep);
+    lib.root_module.linkLibrary(nxdk_zig_dep.artifact("nxdk_usb"));
 
     // --- XGU Begin ---
     {
@@ -40,11 +71,14 @@ pub fn build(b: *std.Build) !void {
     // --- SDL3 Begin ---
     {
         const sdl3_dep = b.dependency("sdl3", .{});
+
+        translate_c.addIncludePath(sdl3_dep.path("include"));
+        nxdk_zig.addCIncludePathsTranslateC(translate_c, nxdk_zig_dep);
+
         lib.installHeadersDirectory(sdl3_dep.path("include/SDL3"), "SDL3", .{});
         lib.root_module.addIncludePath(sdl3_dep.path("include"));
         lib.root_module.addIncludePath(sdl3_dep.path("src"));
-        const sdl3_path = try sdl3_dep.path(".").getPath4(b, null);
-        const sdl3_src_dir = try sdl3_path.openDir(b.graph.io, "src", .{ .iterate = true });
+        const sdl3_src_dir = try sdl3_dep.builder.root.openDir(b.graph.io, "src", .{ .iterate = true });
         defer sdl3_src_dir.close(b.graph.io);
 
         for (core_src_paths) |src_path| {
@@ -103,8 +137,7 @@ pub fn build(b: *std.Build) !void {
     {
         const nxdk_sdl3_dep = b.dependency("nxdk_sdl3", .{});
         lib.root_module.addIncludePath(nxdk_sdl3_dep.path("nxdk_glue"));
-        const nxdk_sdl3_path = try nxdk_sdl3_dep.path(".").getPath4(b, null);
-        const nxdk_sdl3_glue_dir = try nxdk_sdl3_path.openDir(b.graph.io, "nxdk_glue", .{ .iterate = true });
+        const nxdk_sdl3_glue_dir = try nxdk_sdl3_dep.builder.root.openDir(b.graph.io, "nxdk_glue", .{ .iterate = true });
         defer nxdk_sdl3_glue_dir.close(b.graph.io);
 
         for (platform_specific_glue_src_paths) |src_path| {
@@ -135,6 +168,24 @@ pub fn build(b: *std.Build) !void {
         }
     }
     // --- NXDK-SDL3 End ---
+
+    // --- Export Translate-C Mod Begin ---
+    {
+        const module = blk: {
+            const m = try b.graph.arena.create(std.Build.Module);
+            m.init(b, .{ .existing = translate_c.mod });
+            break :blk m;
+        };
+        const gop = try b.modules.getOrPutValue(
+            b.graph.arena,
+            b.graph.dupeString("nxdk_sdl3_zig"),
+            module,
+        );
+        if (gop.found_existing) {
+            std.debug.panic("A module with the name {q} has already been added to the package. Consider creating a private module with std.Build.createModule", .{"nxdk_sdl3_zig"});
+        }
+    }
+    // --- Export Translate-C Mod End ---
 }
 
 const c_macros = [_][]const u8{
